@@ -13,7 +13,7 @@ app = Client("my_account", api_id=api_id, api_hash=api_hash, session_string=sess
 sending = False
 sent_count = 0
 stop_event = threading.Event()
-default_sleep_time = 10
+default_sleep_time = 1
 
 def send_emails(sender_emails, email_password, recipient_emails, email_body, email_subject):
     global sending, sent_count, stop_event
@@ -51,23 +51,23 @@ def send_emails(sender_emails, email_password, recipient_emails, email_body, ema
                 failed_senders.add(sender_email)
                 break
 
-@app.on_message(filters.chat("me"))
+@app.on_message(filters.text)
 def handle_message(client, message):
     global sending, sent_count, stop_event
 
     if message.text.lower().strip() == "إيقاف":
         stop_event.set()
         sending = False
-        client.send_message("me", f"تم إيقاف إرسال البريد الإلكتروني بعد إرسال {sent_count} رسالة.")
+        client.send_message(message.chat.id, f"تم إيقاف إرسال البريد الإلكتروني بعد إرسال {sent_count} رسالة.")
         return
     
     if message.text.lower().strip() == "فحص":
-        client.send_message("me", f"عدد الرسائل المرسلة: {sent_count}")
+        client.send_message(message.chat.id, f"عدد الرسائل المرسلة: {sent_count}")
         return
 
     lines = message.text.split("\n")
     if len(lines) < 4:
-        client.send_message("me", "يرجى التأكد من إدخال المعلومات في الترتيب الصحيح:\n1- الايميل الذي سيرسل منه، الباسورد\n2- ايميل المستلم\n3- كليشة الارسال\n4- الموضوع")
+        client.send_message(message.chat.id, "يرجى التأكد من إدخال المعلومات في الترتيب الصحيح:\n1- الايميل الذي سيرسل منه، الباسورد\n2- ايميل المستلم\n3- كليشة الارسال\n4- الموضوع")
         return
 
     lines = [line.split('-', 1)[-1].strip() for line in lines]
@@ -77,7 +77,7 @@ def handle_message(client, message):
     email_body = "\n".join(lines[2:-1]).strip()
 
     if len(sender_emails) == 0 or len(recipient_emails) == 0:
-        client.send_message("me", "يرجى التأكد من إدخال عناوين البريد الإلكتروني بشكل صحيح")
+        client.send_message(message.chat.id, "يرجى التأكد من إدخال عناوين البريد الإلكتروني بشكل صحيح")
         return
 
     email_password = lines[0].split(',')[1].strip()
@@ -87,9 +87,9 @@ def handle_message(client, message):
         sending = True
         sent_count = 0
         threading.Thread(target=send_emails, args=(sender_emails, email_password, recipient_emails, email_body, email_subject)).start()
-        client.send_message("me", "تم بدء إرسال رسائل البريد الإلكتروني.")
+        client.send_message(message.chat.id, "تم بدء إرسال رسائل البريد الإلكتروني.")
     else:
-        client.send_message("me", "إرسال رسائل البريد الإلكتروني قيد التشغيل بالفعل.")
+        client.send_message(message.chat.id, "إرسال رسائل البريد الإلكتروني قيد التشغيل بالفعل.")
 
 if __name__ == "__main__":
     app.run()
