@@ -1,1 +1,1 @@
-worker: python gaml.py
+worker: python gail.py
